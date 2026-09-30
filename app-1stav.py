@@ -35,9 +35,9 @@ st.title("⚡ Quiz Automatismes - Calcul & Algèbre")
 st.write("Réponds aux 5 questions ci-dessous sans calculatrice.")
 st.divider()
 
-# Gestion de la soumission dans le session_state
-if "soumis" not in st.state:
-    st.state.soumis = False
+# Gestion de la soumission avec st.session_state
+if "soumis" not in st.session_state:
+    st.session_state.soumis = False
 
 user_answers = {}
 
@@ -69,9 +69,9 @@ with st.form("quiz_form"):
 
 # Traitement après validation
 if btn_valider:
-    st.state.soumis = True
+    st.session_state.soumis = True
 
-if st.state.soumis:
+if st.session_state.soumis:
     score = 0
     st.header("📊 Résultats")
     
