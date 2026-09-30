@@ -136,8 +136,6 @@ if mode == "Smartphone Élève":
                             index=None
                         )
                     elif q["type"] == "ouverte":
-                        if "explication" in q:
-                            st.caption(q["explication"])
                         user_answers[q["id"]] = st.text_input(
                             "Ta réponse :",
                             key=f"q_{q['id']}"
