@@ -1,0 +1,61 @@
+[
+  {
+    "id": 1,
+    "type": "qcm",
+    "item": 3,
+    "enonce": "Simplifier l'expression : A(x) = 5 - (3x - 2)",
+    "options": [
+      "-3x + 7",
+      "-3x + 3",
+      "3x + 7",
+      "-3x - 7"
+    ],
+    "rep_correcte": "-3x + 7"
+  },
+  {
+    "id": 2,
+    "type": "qcm",
+    "item": 4,
+    "enonce": "Quelles sont les solutions de l'équation x² = 25 ?",
+    "options": [
+      "Uniquement 5",
+      "5 et -5",
+      "Uniquement 12,5",
+      "Aucune solution"
+    ],
+    "rep_correcte": "5 et -5"
+  },
+  {
+    "id": 3,
+    "type": "qcm",
+    "item": 8,
+    "enonce": "Simplifier : (10⁻³ × 10⁵) / 10⁴",
+    "options": [
+      "10⁻²",
+      "10⁶",
+      "10²",
+      "10⁻⁶"
+    ],
+    "rep_correcte": "10⁻²"
+  },
+  {
+    "id": 4,
+    "type": "qcm",
+    "item": 10,
+    "enonce": "Dans la formule V = R × I, exprimer I en fonction de V et R.",
+    "options": [
+      "I = V / R",
+      "I = V × R",
+      "I = R / V",
+      "I = V - R"
+    ],
+    "rep_correcte": "I = V / R"
+  },
+  {
+    "id": 5,
+    "type": "ouverte",
+    "item": 16,
+    "enonce": "Factoriser l'expression : 16x² - 9",
+    "explication": "Écris la forme factorisée sous la forme (ax+b)(cx+d)"
+  }
+]
