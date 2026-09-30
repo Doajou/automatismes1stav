@@ -63,7 +63,12 @@ if mode == "Smartphone Élève":
     # Si le classement a été réinitialisé par l'enseignant, on débloque l'élève
     if already_submitted and already_submitted not in db["scores"]:
         st.session_state.submitted_pseudo = None
+        st.session_state.etape = "quiz"
         already_submitted = None
+
+    # Initialisation de l'étape élève
+    if "etape" not in st.session_state:
+        st.session_state.etape = "quiz"
 
     # CAS 1 : LA CORRECTION EST ACTIVÉE PAR L'ENSEIGNANT
     if db["show_correction"]:
@@ -106,11 +111,41 @@ if mode == "Smartphone Élève":
     # CAS 2 : ÉLÈVE AYANT DÉJÀ SOUMIS (EN ATTENTE DE CORRECTION)
     elif already_submitted and already_submitted in db["scores"]:
         st.success(f"✅ Réponses enregistrées pour **{already_submitted}** !")
-        st.info("Vos réponses ont bien été transmises. La note et la correction s'afficheront dès que le professeur aura lancé la correction au tableau.")
+        st.info("Merci pour l'évaluation ! Tes réponses ont bien été transmises. La correction s'affichera dès que le professeur l'aura lancée au tableau.")
         
         waiting_screen_fragment()
 
-    # CAS 3 : FORMULAIRE DE SAISIE
+    # CAS 3 : ÉTAPE 2 - ÉVALUATION DU COURS (CURSEUR PIÉGÉ SUR 10)
+    elif st.session_state.etape == "note_cours":
+        st.subheader("⭐ Évaluation du cours")
+        st.write("Avant de valider, donne une note à la séance d'aujourd'hui :")
+
+        # Callback exécuté dès que l'élève modifie et relâche le curseur
+        def forcer_dix():
+            st.session_state.note_slider = 10
+
+        if "note_slider" not in st.session_state:
+            st.session_state.note_slider = 5
+
+        note = st.slider(
+            "Note sur 10 :", 
+            min_value=0, 
+            max_value=10, 
+            key="note_slider",
+            on_change=forcer_dix
+        )
+
+        if note == 10:
+            st.caption("😍 Merci pour ce 10/10 parfait !")
+
+        if st.button("Envoyer mes réponses 🚀", type="primary", use_container_width=True):
+            pseudo_clean = st.session_state.temp_pseudo
+            db["scores"][pseudo_clean] = st.session_state.temp_score
+            db["responses"][pseudo_clean] = st.session_state.temp_answers
+            st.session_state.submitted_pseudo = pseudo_clean
+            st.rerun()
+
+    # CAS 4 : ÉTAPE 1 - SAISIE DU QUIZ
     else:
         pseudo = st.text_input("Entre ton prénom et la première lettre de nom si besoin (si jamais tu ne veux pas, écris anonyme et le nombre de ton choix):", key="user_pseudo")
         
@@ -142,7 +177,8 @@ if mode == "Smartphone Élève":
                         )
                     st.divider()
                 
-                if st.button("Envoyer mes réponses 🚀", type="primary", use_container_width=True):
+                if st.button("Suivant ➡️", type="primary", use_container_width=True):
+                    # Calcul du score temporaire
                     score_total = 0
                     for q in QUESTIONS:
                         rep = user_answers.get(q["id"])
@@ -151,9 +187,11 @@ if mode == "Smartphone Élève":
                         elif q["type"] == "ouverte" and verifier_factorisation_16x2_9(rep):
                             score_total += 1
                     
-                    db["scores"][pseudo_clean] = score_total
-                    db["responses"][pseudo_clean] = user_answers
-                    st.session_state.submitted_pseudo = pseudo_clean
+                    # Stockage temporaire et passage à l'étape de notation
+                    st.session_state.temp_pseudo = pseudo_clean
+                    st.session_state.temp_score = score_total
+                    st.session_state.temp_answers = user_answers
+                    st.session_state.etape = "note_cours"
                     st.rerun()
 
 # ---------------------------------------------------------
@@ -188,6 +226,7 @@ else:
             db["scores"].clear()
             db["responses"].clear()
             db["show_correction"] = False
+            st.session_state.etape = "quiz"
             st.rerun()
 
     # SECTION CORRECTION AU TABLEAU
