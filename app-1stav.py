@@ -121,7 +121,7 @@ if mode == "Smartphone Élève":
     # CAS 3 : ÉTAPE 2 - ÉVALUATION DU COURS (3 ESSAIS MAX PUIS LOCK)
     elif st.session_state.etape == "note_cours":
         st.subheader("⭐ Évaluation du cours")
-        st.write("Avant de valider, donne une note à la séance d'aujourd'hui :")
+        st.write("Avant de valider, si tu devais noter le cours sur 10 tu lui donnerais quoi comme note ?")
 
         # Callback déclenché dès que l'élève relâche le slider
         def forcer_dix_et_compter():
@@ -144,10 +144,13 @@ if mode == "Smartphone Élève":
         )
 
         if est_verrouille:
-            st.warning("🔒 Note enregistrée (curseur bloqué). Merci pour la générosité !")
+            st.caption("Eh bien, quel honneur !")
         elif note == 10:
-            st.caption("😍 Merci pour ce 10/10 parfait !")
-
+            if st.session_state.compteur_tentatives == 2:
+                st.caption("Non, vraiment, merci beaucoup, ça me touche énormément !")
+            else:
+                st.caption("Merci pour ce 10/10 parfait !")
+    
         if st.button("Envoyer mes réponses 🚀", type="primary", use_container_width=True):
             pseudo_clean = st.session_state.temp_pseudo
             db["scores"][pseudo_clean] = st.session_state.temp_score
