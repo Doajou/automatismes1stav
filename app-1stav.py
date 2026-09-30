@@ -36,6 +36,7 @@ def get_global_database():
     return {
         "scores": {},        # {pseudo: score_total}
         "responses": {},     # {pseudo: {q_id: rep}}
+        "notes_cours": {},   # {pseudo: note_cours}
         "show_correction": False
     }
 
@@ -121,7 +122,7 @@ if mode == "Smartphone Élève":
     # CAS 3 : ÉTAPE 2 - ÉVALUATION DU COURS (3 ESSAIS MAX PUIS LOCK)
     elif st.session_state.etape == "note_cours":
         st.subheader("⭐ Évaluation du cours")
-        st.write("Avant de valider, si tu devais noter le cours sur 10 tu lui donnerais quoi comme note ?")
+        st.write("Avant de valider, donne une note à la séance d'aujourd'hui :")
 
         # Callback déclenché dès que l'élève relâche le slider
         def forcer_dix_et_compter():
@@ -150,11 +151,12 @@ if mode == "Smartphone Élève":
                 st.caption("Non, vraiment, merci beaucoup, ça me touche énormément !")
             else:
                 st.caption("Merci pour ce 10/10 parfait !")
-    
+
         if st.button("Envoyer mes réponses 🚀", type="primary", use_container_width=True):
             pseudo_clean = st.session_state.temp_pseudo
             db["scores"][pseudo_clean] = st.session_state.temp_score
             db["responses"][pseudo_clean] = st.session_state.temp_answers
+            db["notes_cours"][pseudo_clean] = note
             st.session_state.submitted_pseudo = pseudo_clean
             st.rerun()
 
@@ -166,7 +168,7 @@ if mode == "Smartphone Élève":
             pseudo_clean = pseudo.strip()
             
             if pseudo_clean in db["scores"]:
-                st.warning(f"⚠️️ **{pseudo_clean}** a déjà envoyé ses réponses.")
+                st.warning(f"⚠️ **{pseudo_clean}** a déjà envoyé ses réponses.")
             else:
                 st.subheader(f"Bonjour {pseudo_clean} !")
                 st.write("Réponds aux questions sans calculatrice :")
@@ -212,41 +214,112 @@ if mode == "Smartphone Élève":
 else:
     st.title("🏆 Classement en direct")
     
+    # État local d'affichage du classement côté enseignant
+    if "reveal_stage" not in st.session_state:
+        st.session_state.reveal_stage = 0  # 0: Masqué, 1: 5e, 2: 4e, 3: 3e, 4: 2e, 5: 1er, 6: Tout
+    
     if db["scores"]:
-        df = pd.DataFrame(
+        df_complet = pd.DataFrame(
             list(db["scores"].items()), 
             columns=["Élève", f"Note (/{len(QUESTIONS)})"]
         )
-        df = df.sort_values(by=f"Note (/{len(QUESTIONS)})", ascending=False).reset_index(drop=True)
-        df.index += 1
+        df_complet = df_complet.sort_values(by=f"Note (/{len(QUESTIONS)})", ascending=False).reset_index(drop=True)
+        df_complet.index += 1
         
-        st.dataframe(df, use_container_width=True, height=300)
+        st.write(f"👥 **{len(db['scores'])} élève(s) répondu(s)**")
+
+        # LOGIQUE D'AFFICHAGE DU CLASSEMENT DYNAMIQUE
+        stage = st.session_state.reveal_stage
+        
+        if stage == 0:
+            st.warning("🙈 Classement masqué. Cliquez sur les boutons ci-dessous pour lancer la révélation !")
+        else:
+            if stage == 6:
+                st.subheader("📋 Classement complet")
+                st.dataframe(df_complet, use_container_width=True, height=350)
+            else:
+                st.subheader("🔥 Top 5 en cours de révélation...")
+                
+                # On détermine les rangs du Top 5 à révéler (de la 5e à la 1re place)
+                # stage=1 -> 5e place (index 4)
+                # stage=2 -> 5e et 4e (indices 4, 3)
+                # ...
+                # stage=5 -> 5e à 1re (indices 4, 3, 2, 1, 0)
+                indices_a_montrer = [5 - i - 1 for i in range(stage)]
+                
+                for idx in indices_a_montrer:
+                    if idx < len(df_complet):
+                        row = df_complet.iloc[idx]
+                        rang = idx + 1
+                        
+                        # Icônes pour le podium
+                        medaille = ""
+                        if rang == 1: medaille = "🥇 "
+                        elif rang == 2: medaille = "🥈 "
+                        elif rang == 3: medaille = "🥉 "
+                        
+                        st.markdown(f"### {medaille}Rang #{rang} : **{row['Élève']}** — `{row[f'Note (/{len(QUESTIONS)})']}/{len(QUESTIONS)} pts`")
+                    st.divider()
+
+        # CONTRÔLES DE RÉVÉLATION DU CLASSEMENT
+        st.subheader("🎛️ Animation du classement")
+        c1, c2, c3, c4 = st.columns(4)
+        
+        with c1:
+            if stage < 5:
+                prochain_rang = 5 - stage
+                if st.button(f"👁️ Révéler la {prochain_rang}e place"):
+                    st.session_state.reveal_stage += 1
+                    st.rerun()
+            elif stage == 5:
+                st.success("🎉 Top 5 totalement révélé !")
+
+        with c2:
+            if st.button("📊 Afficher TOUT le classement"):
+                st.session_state.reveal_stage = 6
+                st.rerun()
+
+        with c3:
+            if st.button("🙈 Masquer le classement"):
+                st.session_state.reveal_stage = 0
+                st.rerun()
+
     else:
         st.info("En attente des premières réponses des élèves...")
     
+    st.divider()
+    
+    # BOUTONS GÉNÉRAUX ENSEIGNANT
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("🔄 Rafraîchir"):
+        if st.button("🔄 Rafraîchir les données"):
             st.rerun()
     with col2:
         btn_label = "🙈 Masquer la correction" if db["show_correction"] else "👁️ Afficher la correction"
-        if st.button(btn_label):
+        if st.button(btn_label, type="primary"):
             db["show_correction"] = not db["show_correction"]
             st.rerun()
     with col3:
-        if st.button("🗑️ Réinitialiser tout"):
+        if st.button("🗑️ Réinitialiser la session"):
             db["scores"].clear()
             db["responses"].clear()
+            db["notes_cours"].clear()
             db["show_correction"] = False
-            st.session_state.etape = "quiz"
-            st.session_state.compteur_tentatives = 0
+            st.session_state.reveal_stage = 0
             st.rerun()
 
-    # SECTION CORRECTION AU TABLEAU
+    # SECTION CORRECTION AU TABLEAU & MOYENNE DU COURS
     if db["show_correction"]:
         st.divider()
         st.subheader("📊 Synthèse & Correction générale")
         
+        # Affichage de la moyenne accordée au cours par les élèves
+        if db["notes_cours"]:
+            notes_list = list(db["notes_cours"].values())
+            moyenne_cours = sum(notes_list) / len(notes_list)
+            st.metric("⭐ Appréciation moyenne du cours par la classe", f"{moyenne_cours:.1f} / 10")
+            st.divider()
+
         if db["responses"]:
             nb_eleves = len(db["responses"])
             
