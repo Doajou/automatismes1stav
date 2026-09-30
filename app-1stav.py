@@ -262,25 +262,24 @@ else:
                     st.divider()
 
         # CONTRÔLES DE RÉVÉLATION DU CLASSEMENT
-        st.subheader("🎛️ Animation du classement")
         c1, c2, c3, c4 = st.columns(4)
         
         with c1:
             if stage < 5:
                 prochain_rang = 5 - stage
-                if st.button(f"👁️ Révéler la {prochain_rang}e place"):
+                if st.button(f"Révéler la {prochain_rang}e place"):
                     st.session_state.reveal_stage += 1
                     st.rerun()
             elif stage == 5:
                 st.success("🎉 Top 5 totalement révélé !")
 
         with c2:
-            if st.button("📊 Afficher TOUT le classement"):
+            if st.button("Afficher TOUT le classement"):
                 st.session_state.reveal_stage = 6
                 st.rerun()
 
         with c3:
-            if st.button("🙈 Masquer le classement"):
+            if st.button("Masquer le classement"):
                 st.session_state.reveal_stage = 0
                 st.rerun()
 
@@ -292,10 +291,10 @@ else:
     # BOUTONS GÉNÉRAUX ENSEIGNANT
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("🔄 Rafraîchir les données"):
+        if st.button("Rafraîchir les données"):
             st.rerun()
     with col2:
-        btn_label = "🙈 Masquer la correction" if db["show_correction"] else "👁️ Afficher la correction"
+        btn_label = "Masquer la correction" if db["show_correction"] else "Afficher la correction"
         if st.button(btn_label, type="primary"):
             db["show_correction"] = not db["show_correction"]
             st.rerun()
