@@ -112,7 +112,7 @@ if mode == "Smartphone Élève":
 
     # CAS 3 : FORMULAIRE DE SAISIE
     else:
-        pseudo = st.text_input("Entrez ton Prénom et Nom :", key="user_pseudo")
+        pseudo = st.text_input("Entre ton prénom et la première lettre de nom si besoin (si jamais tu ne veux pas, écris anonyme et le nombre de ton choix):", key="user_pseudo")
         
         if pseudo:
             pseudo_clean = pseudo.strip()
@@ -140,8 +140,7 @@ if mode == "Smartphone Élève":
                             st.caption(q["explication"])
                         user_answers[q["id"]] = st.text_input(
                             "Ta réponse :",
-                            key=f"q_{q['id']}",
-                            placeholder="Ex : (4x+3)(4x-3)"
+                            key=f"q_{q['id']}"
                         )
                     st.divider()
                 
