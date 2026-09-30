@@ -64,11 +64,14 @@ if mode == "Smartphone Élève":
     if already_submitted and already_submitted not in db["scores"]:
         st.session_state.submitted_pseudo = None
         st.session_state.etape = "quiz"
+        st.session_state.compteur_tentatives = 0
         already_submitted = None
 
-    # Initialisation de l'étape élève
+    # Initialisation des variables de session pour la navigation
     if "etape" not in st.session_state:
         st.session_state.etape = "quiz"
+    if "compteur_tentatives" not in st.session_state:
+        st.session_state.compteur_tentatives = 0
 
     # CAS 1 : LA CORRECTION EST ACTIVÉE PAR L'ENSEIGNANT
     if db["show_correction"]:
@@ -115,27 +118,34 @@ if mode == "Smartphone Élève":
         
         waiting_screen_fragment()
 
-    # CAS 3 : ÉTAPE 2 - ÉVALUATION DU COURS (CURSEUR PIÉGÉ SUR 10)
+    # CAS 3 : ÉTAPE 2 - ÉVALUATION DU COURS (3 ESSAIS MAX PUIS LOCK)
     elif st.session_state.etape == "note_cours":
         st.subheader("⭐ Évaluation du cours")
         st.write("Avant de valider, donne une note à la séance d'aujourd'hui :")
 
-        # Callback exécuté dès que l'élève modifie et relâche le curseur
-        def forcer_dix():
+        # Callback déclenché dès que l'élève relâche le slider
+        def forcer_dix_et_compter():
             st.session_state.note_slider = 10
+            st.session_state.compteur_tentatives += 1
 
         if "note_slider" not in st.session_state:
             st.session_state.note_slider = 5
+
+        # Verrouillage si 3 essais ont été faits
+        est_verrouille = st.session_state.compteur_tentatives >= 3
 
         note = st.slider(
             "Note sur 10 :", 
             min_value=0, 
             max_value=10, 
             key="note_slider",
-            on_change=forcer_dix
+            disabled=est_verrouille,
+            on_change=forcer_dix_et_compter
         )
 
-        if note == 10:
+        if est_verrouille:
+            st.warning("🔒 Note enregistrée (curseur bloqué). Merci pour la générosité !")
+        elif note == 10:
             st.caption("😍 Merci pour ce 10/10 parfait !")
 
         if st.button("Envoyer mes réponses 🚀", type="primary", use_container_width=True):
@@ -153,7 +163,7 @@ if mode == "Smartphone Élève":
             pseudo_clean = pseudo.strip()
             
             if pseudo_clean in db["scores"]:
-                st.warning(f"⚠️ **{pseudo_clean}** a déjà envoyé ses réponses.")
+                st.warning(f"⚠️️ **{pseudo_clean}** a déjà envoyé ses réponses.")
             else:
                 st.subheader(f"Bonjour {pseudo_clean} !")
                 st.write("Réponds aux questions sans calculatrice :")
@@ -178,7 +188,6 @@ if mode == "Smartphone Élève":
                     st.divider()
                 
                 if st.button("Suivant ➡️", type="primary", use_container_width=True):
-                    # Calcul du score temporaire
                     score_total = 0
                     for q in QUESTIONS:
                         rep = user_answers.get(q["id"])
@@ -187,11 +196,11 @@ if mode == "Smartphone Élève":
                         elif q["type"] == "ouverte" and verifier_factorisation_16x2_9(rep):
                             score_total += 1
                     
-                    # Stockage temporaire et passage à l'étape de notation
                     st.session_state.temp_pseudo = pseudo_clean
                     st.session_state.temp_score = score_total
                     st.session_state.temp_answers = user_answers
                     st.session_state.etape = "note_cours"
+                    st.session_state.compteur_tentatives = 0
                     st.rerun()
 
 # ---------------------------------------------------------
@@ -227,6 +236,7 @@ else:
             db["responses"].clear()
             db["show_correction"] = False
             st.session_state.etape = "quiz"
+            st.session_state.compteur_tentatives = 0
             st.rerun()
 
     # SECTION CORRECTION AU TABLEAU
@@ -240,7 +250,6 @@ else:
             for q in QUESTIONS:
                 st.markdown(f"#### Question {q['id']} : {q['enonce']}")
                 
-                # Calcul du taux de réussite
                 nb_reussite = 0
                 for user_resp in db["responses"].values():
                     rep = user_resp.get(q["id"])
